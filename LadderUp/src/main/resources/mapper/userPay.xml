@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="userPay"> <!-- mapper파일의 이름 -->
+
+	
+	<select id="paymentUser" parameterType="userPayment.UserPayVo" resultType = "userPayment.UserPayVo">
+		select * from user where user_no = #{user_no}
+	</select>
+	
+	<insert id = "payInsert" parameterType="userPayment.UserPayVo">
+			INSERT INTO payment(pay_date, pay_id, user_no, product_no, merchant_id, refund)
+			VALUES (NOW(), #{pay_id}, #{user_no}, #{product_no}, #{merchant_id}, #{refund})
+	</insert>
+	
+	<update id="userGrade" parameterType="userPayment.UserPayVo">
+		UPDATE user SET user_grade = 1 
+		<if test="product_no == 99"> 
+			, user_exp = 1
+		</if>
+		WHERE user_no = #{user_no}
+	</update>
+	
+	<update id="refundUpdate" parameterType="userPayment.UserPayVo">
+		UPDATE payment SET refund = 2, refund_reason = #{refund_reason} WHERE refund = 1 AND user_no = #{user_no} ORDER BY pay_date DESC limit 1
+	</update>
+	
+	<select id="refLogin" parameterType="userPayment.UserPayVo" resultType="userPayment.UserPayVo">
+		SELECT *, DATEDIFF(NOW(), pay_date) AS due_date FROM
+		user left join payment on user.user_no = payment.user_no WHERE user_email = #{user_email} ORDER BY pay_date DESC limit 1
+	</select>
+	
+	
+</mapper>

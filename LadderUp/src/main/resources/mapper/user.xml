@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="user"> <!-- mapper파일의 이름 -->
+
+	<insert id="insert" parameterType="user.UserVo" useGeneratedKeys="true">
+		INSERT INTO user (
+			user_email, user_pwd, user_nick, user_name, user_tel, user_regdate, zipcode, addr1, addr2
+		) VALUES (
+			 #{user_email},md5(#{user_pwd}),#{user_nick},#{user_name},#{user_tel},NOW(), #{zipcode}, #{addr1}, #{addr2}
+		)
+	</insert>		
+				
+	<select id="login" parameterType="user.UserVo" resultType="user.UserVo">
+		SELECT *, DATEDIFF(NOW(), pay_date) AS due_date FROM
+		user left join payment on user.user_no = payment.user_no WHERE user_email= #{user_email} AND user_pwd=md5(#{user_pwd}) ORDER BY pay_date DESC limit 1
+	</select>
+	
+	<update id="dueDate" parameterType="user.UserVo">
+		UPDATE payment INNER JOIN user ON payment.user_no = user.user_no SET user_grade = 2
+		<if test="refund == 1"> 
+			,payment.refund = 100
+		</if>
+		<if test="product_no == 99"> 
+			, user_exp = 2
+		</if>
+		<if test="refund == 1"> 
+			WHERE user.user_no = #{user_no} AND refund = 1
+		</if>
+		<if test="refund != 1"> 
+			WHERE user.user_no = #{user_no} 
+		</if>
+	</update>
+	
+	<select id="searchId" parameterType="user.UserVo" resultType="user.UserVo">
+		SELECT * FROM user WHERE user_tel = #{user_tel} AND user_name = #{user_name}
+	</select>
+	
+	<select id="searchPwd" parameterType="user.UserVo" resultType="user.UserVo">
+		SELECT * FROM user WHERE user_email = #{user_email} AND user_name = #{user_name}
+	</select> 
+	
+	<update id="updateTempPwd" parameterType="user.UserVo">
+		UPDATE user SET user_pwd = md5(#{user_pwd}) WHERE user_email = #{user_email} AND user_name = #{user_name}
+	</update>
+	
+	
+	<select id="userEmailCheck" parameterType="String" resultType="int">
+		SELECT COUNT(*) FROM user WHERE user_email = #{user_email}
+	</select>
+	
+	<select id="emailDuplicate" parameterType="String" resultType="int">
+		SELECT COUNT(*) FROM user WHERE user_email = #{user_email}
+	</select> 
+
+	 <sql id="boardWhere">
+	 	<where>
+			<if test="searchType == '' ">
+				(user_email LIKE '%${searchWord}%' OR user_name LIKE '%${searchWord}%')
+			</if>
+			<if test="searchType != null and searchType != '' ">
+				${searchType} LIKE '%${searchWord}%'
+			</if>			  
+			<if test="user_no > 0">
+				AND user_no = ${user_no}
+			</if>
+		</where>
+	 </sql>
+
+	<select id="userList" resultType="user.UserVo" parameterType="user.UserVo">
+		SELECT * FROM user
+		<include refid="boardWhere"></include>
+		ORDER BY user_regdate DESC
+		LIMIT ${startIdx},10
+	</select>
+  
+	<delete id="userDelete">
+		DELETE FROM user WHERE user_no=#{user_no}
+	</delete>
+	
+	<select id="userOne" parameterType="int" resultType="user.UserVo">
+		SELECT * FROM user WHERE user_no = #{xxx}
+	</select>
+	
+	<select id="userCount" resultType="int" parameterType="user.UserVo">
+	 	SELECT COUNT(*) FROM user
+	 	<include refid="boardWhere"></include> 	
+	 </select>	
+	
+	 
+	<update id="userUpdate" parameterType="user.UserVo">
+		UPDATE user SET 
+			 user_tel =#{user_tel}
+			, user_nick =#{user_nick}
+			, zipcode =#{zipcode}
+			, addr1 =#{addr1}
+			, addr2 =#{addr2}
+			<if test="user_pwdSel == 1"> 
+			, user_pwd = md5(#{user_rePwd})
+			</if>
+		WHERE user_no = #{user_no}
+	</update>
+	
+	<update id="mypageUpdate" parameterType="user.UserVo">
+		UPDATE user SET 
+			, user_nick =#{user_nick} 
+			, user_tel =#{user_tel}
+			, zipcode =#{zipcode}
+			, addr1 =#{addr1}
+			, addr2 =#{addr2}
+			<if test="user_pwdSel == '1' "> 
+			, user_pwd = md5(#{user_rePwd})
+			</if>
+		WHERE user_no = #{user_no}
+	</update>
+
+	<delete id="mypageDelete" parameterType="int">
+		DELETE FROM user WHERE user_no=#{user_no}
+	</delete>	
+		
+	<select id="myExamlist" parameterType="int" resultType="question.ExamVo">
+		SELECT * FROM exam WHERE exam_no IN (SELECT exam_no FROM answered_question WHERE user_no=#{user_no} GROUP BY exam_no)
+	</select>
+	
+	<select id="myRandomExam" parameterType="int" resultType="school.SchoolVo">
+		SELECT * FROM school WHERE school_no IN (SELECT school_no FROM random_question WHERE user_no=#{user_no} GROUP BY school_no)
+	</select>
+	
+	<select id="reLogin" parameterType="user.UserVo" resultType="user.UserVo">
+		SELECT *, DATEDIFF(NOW(), pay_date) AS due_date FROM
+		user left join payment on user.user_no = payment.user_no WHERE user_email = #{user_email} ORDER BY pay_date DESC limit 1
+	</select>
+
+</mapper>

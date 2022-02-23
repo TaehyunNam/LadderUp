@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="question"><!-- mapper파일의 이름 -->
+
+	<insert id="insert_question" parameterType="question.QuestionVo" useGeneratedKeys="true">
+		INSERT INTO question (passage, question_content, explanation, answer, admin_no, question_ref, exam_no) 
+		VALUES (#{passage}, #{question_content}, #{explanation}, #{answer}, #{admin_no}, #{question_ref}, #{exam_no})	
+		<selectKey keyProperty="question_no" resultType="int" order="AFTER">
+			SELECT LAST_INSERT_ID()
+		</selectKey>
+	</insert>	
+	
+	<select id="selectQuestion" parameterType="int" resultType="question.QuestionVo">
+		SELECT * FROM question WHERE question_no=#{question_no}
+	</select>
+	
+	<select id="selectExample" parameterType="int" resultType="question.ExampleVo">
+		SELECT * FROM example WHERE question_no=#{question_no}
+	</select>
+	
+	<update id="updateQuestion" parameterType="question.QuestionVo">
+		UPDATE question SET question_content=#{question_content}, passage=#{passage}, answer=#{answer}, explanation=#{explanation}
+		WHERE question_no=#{question_no}
+	</update>
+	
+	<update id="updateExample" parameterType="question.ExampleVo">
+		UPDATE example SET example_content=#{example_content} WHERE example_no=#{example_no}
+	</update>
+	
+	<delete id="deleteQuestion" parameterType="int">
+		DELETE FROM q, e USING question AS q LEFT JOIN example AS e ON q.question_no=e.question_no
+		WHERE e.question_no=#{question_no}	
+</delete>
+	
+	<insert id="insert_example" parameterType="question.ExampleVo">
+		INSERT INTO example(example, example_content, question_no)
+		VALUES (#{example},#{example_content},#{question_no})
+	</insert>
+	
+	<select id="selectQuestionlist" resultType="question.QuestionVo" parameterType="question.QuestionVo">
+		SELECT * FROM question WHERE exam_no=#{exam_no} ORDER BY question_no 
+	</select>
+	
+	<select id="selectExamplelist" resultType="question.ExampleVo" parameterType="question.ExampleVo">
+		SELECT * FROM example
+	</select>
+	
+	<insert id="insert_school" parameterType="school.SchoolVo">
+		INSERT INTO school (school_name)
+		VALUES (#{school_name})
+	</insert>
+	<select id="selectList" resultType="school.SchoolVo" parameterType="school.SchoolVo">
+		SELECT * FROM school order by school_name asc;
+	</select>
+	
+	<select id="selectExam" resultType="question.QuestionVo" parameterType="int">
+		SELECT * FROM exam WHERE exam_no=#{exam_no}
+	</select>
+	
+	<insert id="insert_exam" parameterType="question.QuestionVo">
+		INSERT INTO exam (year, number_of_questions, exam_time, semester, school_no)
+		VALUES (#{year}, #{number_of_questions}, #{exam_time}, #{semester}, #{school_no})
+	</insert>
+	
+	<select id="selectSchool" resultType="school.SchoolVo" parameterType="int">
+		SELECT * FROM school WHERE school_no=#{school_no}
+	</select>
+	
+	<select id="selectyear" resultType="question.QuestionVo" parameterType="question.QuestionVo">
+		select exam.school_no, year, semester,exam_no from exam join school on exam.school_no = school.school_no where exam.school_no = #{school_no}
+	</select>
+	<select id="selectsemester" resultType="question.QuestionVo" parameterType="question.QuestionVo">
+		select exam.school_no, year, semester,exam_no from exam join school on exam.school_no = school.school_no
+		 where exam.year = #{year} and exam.school_no = #{school_no}
+	</select>
+	<select id="showexam" parameterType="question.QuestionVo" resultType="question.QuestionVo">
+		select school_name, exam.semester, exam_no, year from exam join school on school.school_no=exam.school_no where exam_no = #{exam_no}
+	</select>
+	
+	<!-- ======================= USER ============================= -->
+	
+	<insert id="insertAQ" parameterType="question.AnsweredQuestionVo">
+		INSERT INTO answered_question(user_answer, score, answered_date, memo, question_no, user_no, exam_no) 
+		VALUES(#{user_answer}, #{score}, NOW(), #{memo}, #{question_no}, #{user_no}, #{exam_no})
+	</insert>
+	
+	<select id="selectAQlist" resultType="question.AnsweredQuestionVo" parameterType="question.AnsweredQuestionVo">
+		SELECT * FROM answered_question WHERE user_no=#{user_no} AND exam_no=#{exam_no}
+	</select>
+	
+	<select id="randomQuestion" resultType="question.QuestionVo" parameterType="int">
+		SELECT * FROM question WHERE exam_no IN (SELECT exam_no FROM exam WHERE school_no=#{school_no}) AND question_ref IS NULL ORDER BY RAND() LIMIT 4
+	</select>
+	
+	<select id="refQuestion" resultType="question.QuestionVo" parameterType="int">
+		SELECT * FROM question WHERE question_ref=#{question_no}
+	</select>
+	
+	<insert id="insertRandom" parameterType="question.RandomQuestionVo">
+		INSERT INTO random_question(user_answer, score, answered_date, memo, question_no, user_no, school_no)	
+		VALUES(#{user_answer}, #{score}, NOW(), #{memo}, #{question_no}, #{user_no}, #{school_no})
+	</insert>
+	
+	<select id="selectRandom" resultType="question.RandomQuestionVo" parameterType="question.RandomQuestionVo">
+		SELECT * FROM random_question r JOIN question q ON r.question_no=q.question_no AND school_no=#{school_no} AND user_no=#{user_no}
+	</select>
+	
+	<insert id="insertwords" parameterType="question.AnsweredQuestionVo">
+		INSERT INTO words (
+			word, mean, user_no
+		) VALUES (
+			 #{word},#{mean},#{user_no}
+		)
+	</insert>	
+	
+	<select id="viewwords" resultType="question.AnsweredQuestionVo" parameterType="int">
+		SELECT * FROM words where user_no=#{user_no} order by word_no desc
+	</select>	
+	<delete id="delete" parameterType="int">
+		DELETE FROM words WHERE word_no=#{word_no}
+	</delete>	
+	
+	<select id="selectWAlist" resultType="question.QuestionVo" parameterType="question.QuestionVo">
+		SELECT
+			q.question_no,
+			q.question_ref, 
+			q.passage, 
+			q.question_content, 
+			q.answer, 
+			q.explanation,
+			aq.memo
+		FROM answered_question aq
+			JOIN
+			question q on q.question_no=aq.question_no where user_no=#{user_no} and score=0
+			LIMIT ${startIdx},10
+	</select>
+	
+	<select id="wrongCount" resultType="int" parameterType="question.QuestionVo">
+	 	SELECT COUNT(*) 
+		FROM answered_question aq
+			JOIN
+			question q on q.question_no=aq.question_no where user_no=#{user_no} and score=0
+	</select>
+	
+	<delete id="noteDelete">
+		DELETE aq
+		FROM answered_question aq
+			JOIN question q 
+			on q.question_no=aq.question_no and user_no=#{user_no} and score=0	
+			WHERE aq.question_no=#{question_no}
+			
+	</delete>
+	
+	<update id="noteUpdate" parameterType="question.QuestionVo">
+		UPDATE answered_question
+		SET
+			memo=#{memo} 
+		WHERE user_no=#{user_no} and question_no=#{question_no}
+	</update>	
+ 	
+</mapper>

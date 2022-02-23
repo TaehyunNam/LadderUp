@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="pay"> <!-- mapper파일의 이름 -->
+
+
+	<select id="PaymentRecord" parameterType="payment.PayVo" resultType = "payment.PayVo">
+		SELECT *
+		FROM user JOIN payment ON user.user_no = payment.user_no JOIN product ON payment.product_no = product.product_no 
+		<if test="refund != 0">
+			<if test="refund == 5">
+			where user_grade = 2
+			</if>
+			<if test="refund != 5">
+			where refund = #{refund} 
+			</if>
+		</if>
+		ORDER BY pay_date DESC LIMIT ${startIdx},10
+	</select>
+	
+	<update id="cancelPay" parameterType="payment.PayVo">
+		UPDATE payment INNER JOIN user ON payment.user_no = user.user_no LEFT JOIN admin ON admin.admin_no = payment.admin_no
+		SET payment.refund = 3, user.user_grade = 0, payment.admin_no = #{admin_no}  WHERE user.user_no = #{user_no} AND payment.refund = 2	
+	</update>
+	
+	<update id="cancelPay2" parameterType="payment.PayVo">
+		UPDATE payment INNER JOIN user ON payment.user_no = user.user_no LEFT JOIN admin ON admin.admin_no = payment.admin_no
+		SET payment.refund = 4, payment.admin_no = #{admin_no}  WHERE user.user_no = #{user_no} AND payment.refund = 2	
+	</update>
+	
+	 
+	 
+	 <select id="payCount" resultType="int" parameterType="payment.PayVo">
+	 	SELECT COUNT(*) FROM payment
+	 	<if test="refund != 0">
+			where refund = #{refund} 
+		</if>
+	 </select>
+	 
+
+
+
+</mapper>

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="comment"> <!-- mapper파일의 이름 -->
+	
+	<sql id="commentWhere">
+	 	<where>
+			<if test="notice_no != 0 ">
+				notice_no=#{notice_no} AND tablename=#{tablename}
+			</if>
+			<if test="qa_no != 0 ">
+				qa_no=#{qa_no} AND tablename=#{tablename}
+			</if>			  
+			<if test="td_no != 0 ">
+				td_no=#{td_no} AND tablename=#{tablename}
+			</if>
+			<if test="community_no != 0 ">
+				community_no=#{community_no} AND tablename=#{tablename}
+			</if>
+		</where>
+	 </sql>	
+	 
+	<select id="selectList" resultType="comment.CommentVo" parameterType="comment.CommentVo">
+		SELECT * 
+			<if test="admin_no != null">
+			,(SELECT admin_name FROM admin WHERE admin_no=comment.admin_no) admin_name
+			</if>
+			<if test="user_no != null">
+			,(SELECT user_name FROM user WHERE user_no=comment.user_no) user_name
+			</if>			
+	 	FROM comment
+		<include refid="commentWhere"></include>
+		ORDER BY regdate DESC
+	</select>
+	
+	<select id="myList" resultType="comment.CommentVo" parameterType="comment.CommentVo">
+		SELECT * FROM comment
+		WHERE user_no = #{user_no}				
+		ORDER BY regdate DESC
+	</select> 
+	
+	<insert id="insert" parameterType="comment.CommentVo">
+		<!-- #{}는 PreparedStatement, ${}는 Statement -->
+		INSERT INTO comment (
+			tablename, content, 
+				<if test="admin_no != 0">
+					admin_no
+				</if>
+				<if test="user_no != 0">
+					user_no
+				</if>
+				, 
+				<if test="notice_no != 0 ">
+					notice_no
+				</if>
+				<if test="qa_no != 0 ">
+					qa_no
+				</if>			  
+				<if test="td_no != 0 ">
+					td_no
+				</if>
+				<if test="community_no != 0 ">
+					community_no
+				</if>
+			, regdate
+			) VALUES (
+				#{tablename}, #{content},
+					<if test="admin_no != 0">
+						#{admin_no} 
+					</if>
+					<if test="user_no != 0">
+						#{user_no}
+					</if>				
+					, 
+					<if test="notice_no != 0 ">
+						#{notice_no}
+					</if>
+					<if test="qa_no != 0 ">
+						#{qa_no}
+					</if>			  
+					<if test="td_no != 0 ">
+						#{td_no}
+					</if>
+					<if test="community_no != 0 ">
+						#{community_no}
+					</if>
+				, NOW()
+			) 
+	</insert>	
+		 
+	<delete id="delete" parameterType="int">
+		DELETE FROM comment WHERE c_no=#{c_no}
+	</delete>	
+</mapper> 

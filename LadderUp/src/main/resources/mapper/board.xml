@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="board"> <!-- mapper파일의 이름 -->
+
+	 <!-- ======================================= 공지사항 영역 시작 ======================================= -->
+	 <sql id="boardWhere1">
+	 	<where>
+			<if test="searchType == '' ">
+				(notice_title LIKE '%${searchWord}%' OR notice_content LIKE '%${searchWord}%')
+			</if>
+			<if test="searchType != null and searchType != '' ">
+				${searchType} LIKE '%${searchWord}%'
+			</if>	
+		</where>
+	 </sql>
+	 
+	 <!-- 페이징처리 -->
+	 <select id="noticeCount" resultType="int" parameterType="board.NoticeVo">
+	 	SELECT COUNT(*) FROM notice
+	 	<include refid="boardWhere1"></include>
+	 </select>
+
+	<select id="noticeList" resultType="board.NoticeVo" parameterType="board.NoticeVo">
+		SELECT * 
+		, (SELECT admin_name FROM admin WHERE admin_no=notice.admin_no) admin_name
+		FROM notice
+		<include refid="boardWhere1"></include>
+		ORDER BY notice_no DESC
+		LIMIT ${startIdx},10
+	</select>
+	
+	<!-- //페이징처리 -->
+	
+	<insert id="noticeInsert" parameterType="board.NoticeVo">		
+		INSERT INTO notice (
+			notice_title, notice_content, notice_date, admin_no, notice_readcount, notice_file_org, notice_file_real 
+			) VALUES (
+				#{notice_title}, #{notice_content}, NOW(), #{admin_no}, #{notice_readcount}, #{notice_file_org}, #{notice_file_real}
+			) 
+	</insert>
+	
+	<select id="noticeOne" parameterType="int" resultType="board.NoticeVo">
+		SELECT * 
+		, (SELECT admin_name FROM admin WHERE admin_no=notice.admin_no) admin_name
+		FROM notice WHERE notice_no = #{xxx}
+	</select>
+	
+	<update id="noticeUpdateReadcount" parameterType="board.NoticeVo">
+		UPDATE notice SET notice_readcount=notice_readcount+1 WHERE notice_no = #{notice_no}
+	</update>
+	
+	<update id="noticeUpdate" parameterType="board.NoticeVo">
+		UPDATE notice SET 
+			notice_title=#{notice_title} 
+			, notice_content=#{notice_content}
+			<if test="notice_file_org != null"> 
+			, notice_file_org=#{notice_file_org} 
+			, notice_file_real=#{notice_file_real}
+			</if> 
+		WHERE notice_no = #{notice_no}
+	</update>
+	
+	<delete id="noticeDelete">
+		DELETE FROM notice WHERE notice_no=#{notice_no}
+	</delete>
+	
+	<!-- ======================================= 공지사항 영역 끝 ======================================= -->
+	
+	
+	<!-- ======================================= 시험일정 영역 시작 ======================================= -->
+	
+	<sql id="boardWhere2">
+	 	<where>
+			<if test="searchType == '' ">
+				(td_title LIKE '%${searchWord}%' OR td_content LIKE '%${searchWord}%')
+			</if>
+			<if test="searchType != null and searchType != '' ">
+				${searchType} LIKE '%${searchWord}%'
+			</if>
+		</where>
+	 </sql>
+	 
+	 <!-- 페이징처리 -->
+	 <select id="tdCount" resultType="int" parameterType="board.TestdateVo">
+	 	SELECT COUNT(*) FROM testdate
+	 	<include refid="boardWhere2"></include>
+	 </select>
+
+	<select id="tdList" resultType="board.TestdateVo" parameterType="board.TestdateVo">
+		SELECT * 
+		, (SELECT admin_name FROM admin WHERE admin_no=testdate.admin_no) admin_name
+		FROM testdate
+		<include refid="boardWhere2"></include>
+		ORDER BY td_no DESC
+		LIMIT ${startIdx},10
+	</select>
+	
+	<insert id="tdInsert" parameterType="board.TestdateVo">		
+		INSERT INTO testdate (
+			td_title, td_content, td_date, admin_no, td_readcount, td_file_org, td_file_real 
+			) VALUES (
+				#{td_title}, #{td_content}, NOW(), #{admin_no}, #{td_readcount}, #{td_file_org}, #{td_file_real}
+			) 
+	</insert>
+	
+	<select id="tdOne" parameterType="int" resultType="board.TestdateVo">
+		SELECT * 
+		, (SELECT admin_name FROM admin WHERE admin_no=testdate.admin_no) admin_name
+		FROM testdate WHERE td_no = #{xxx}
+	</select>
+	
+	<update id="tdUpdateReadcount" parameterType="board.TestdateVo">
+		UPDATE testdate SET td_readcount=td_readcount+1 WHERE td_no = #{td_no}
+	</update>
+	
+	<update id="tdUpdate" parameterType="board.TestdateVo">
+		UPDATE testdate SET 
+			td_title=#{td_title} 
+			, td_content=#{td_content}
+			<if test="td_file_org != null"> 
+			, td_file_org=#{td_file_org} 
+			, td_file_real=#{td_file_real}
+			</if> 
+		WHERE td_no = #{td_no}
+	</update>
+	
+	<delete id="tdDelete">
+		DELETE FROM testdate WHERE td_no=#{td_no}
+	</delete>
+	
+	
+	<!-- ======================================= 시험일정 영역 끝 ======================================= -->
+	
+	
+	<!-- ======================================= QnA 영역 시작 ======================================= -->
+	
+	<sql id="boardWhere3">
+	 	<where>
+			<if test="searchType == '' ">
+				(qa_title LIKE '%${searchWord}%' OR qa_content LIKE '%${searchWord}%')
+			</if>
+			<if test="searchType != null and searchType != '' and searchType != 'user_name'">
+				${searchType} LIKE '%${searchWord}%'
+			</if>
+			<if test="searchType == 'user_name' ">
+				(SELECT user_name FROM user WHERE user_no=qa.user_no) LIKE '%${searchWord}%'
+			</if>			
+			<if test="qa_division != null and qa_division != '' ">
+				qa_division = "${qa_division}"
+			</if>
+			<if test="user_no > 0 and user_no != null">
+				AND user_no = ${user_no}
+			</if>
+		</where>
+	 </sql>
+	 
+	 <!-- 페이징처리 -->
+	 <select id="qaCount" resultType="int" parameterType="board.QaVo">
+	 	SELECT COUNT(*) FROM qa
+	 	<include refid="boardWhere3"></include>
+	 </select>
+
+	<select id="qaList" resultType="board.QaVo" parameterType="board.QaVo">
+		SELECT * 
+		, (SELECT user_name FROM user WHERE user_no=qa.user_no) user_name		
+		, (SELECT COUNT(*) FROM comment WHERE qa_no=qa.qa_no) c_count
+		FROM qa
+		<include refid="boardWhere3"></include>
+		ORDER BY qa_no DESC
+		LIMIT ${startIdx},10
+	</select>
+	
+	<insert id="qaInsert" parameterType="board.QaVo">		
+		INSERT INTO qa (
+			qa_division, qa_title, qa_content, qa_date, user_no, qa_readcount 
+			) VALUES (
+				#{qa_division}, #{qa_title}, #{qa_content}, NOW(), #{user_no}, #{qa_readcount}
+			) 
+	</insert>
+	
+	<select id="qaOne" parameterType="int" resultType="board.QaVo">
+		SELECT * FROM qa WHERE qa_no = #{xxx}
+	</select>
+	
+	<update id="qaUpdateReadcount" parameterType="board.QaVo">
+		UPDATE qa SET qa_readcount=qa_readcount+1 WHERE qa_no = #{qa_no}
+	</update>
+	
+	<update id="qaUpdate" parameterType="board.QaVo">
+		UPDATE qa SET
+			qa_division=#{qa_division} 
+			, qa_title=#{qa_title} 
+			, qa_content=#{qa_content}
+		WHERE qa_no = #{qa_no}
+	</update>
+	
+	<delete id="qaDelete">
+		DELETE FROM qa WHERE qa_no=#{qa_no}
+	</delete>
+	
+	<delete id="userQaDelete">
+		DELETE FROM qa WHERE qa_no=#{qa_no}
+	</delete>
+	
+	
+	<!-- ======================================= QnA 영역 끝 ======================================= -->
+	
+	
+	
+	
+	<!-- ======================================= 커뮤니티 영역 시작 ======================================= -->
+	
+	<sql id="boardWhere4">
+	 	<where>
+			<if test="searchType == '' ">
+				(community_title LIKE '%${searchWord}%' OR community_content LIKE '%${searchWord}%')
+			</if>
+			<if test="searchType != null and searchType != '' and searchType != 'user_name'">
+				${searchType} LIKE '%${searchWord}%'
+			</if>
+			<if test="searchType == 'user_name' ">
+				(SELECT user_name FROM user WHERE user_no=community.user_no) LIKE '%${searchWord}%'
+			</if>
+			<if test="user_no > 0">
+				AND user_no = ${user_no}
+			</if>
+		</where>		
+	 </sql>
+	 
+	 <!-- 페이징처리 -->
+	 <select id="communityCount" resultType="int" parameterType="board.CommunityVo">
+	 	SELECT COUNT(*) FROM community
+	 	<include refid="boardWhere4"></include>
+	 </select>
+
+	<select id="communityList" resultType="board.CommunityVo" parameterType="board.CommunityVo">
+		SELECT *
+		, (SELECT user_name FROM user WHERE user_no=community.user_no) user_name
+		, (SELECT COUNT(*) FROM comment WHERE community_no=community.community_no) c_count
+		FROM community
+		<include refid="boardWhere4"></include>		
+		ORDER BY community_no DESC
+		LIMIT ${startIdx},10
+	</select>
+	
+	<insert id="communityInsert" parameterType="board.CommunityVo">		
+		INSERT INTO community (
+			community_title, community_content, community_date, user_no, community_readcount 
+			) VALUES (
+				#{community_title}, #{community_content}, NOW(), #{user_no}, #{community_readcount}
+			) 
+	</insert>
+	
+	<select id="communityOne" parameterType="int" resultType="board.CommunityVo">
+		SELECT *		
+			, (SELECT user_name FROM user WHERE user_no=community.user_no) user_name		
+		FROM community WHERE community_no = #{xxx}
+	</select>
+	
+	<update id="communityUpdateReadcount" parameterType="board.CommunityVo">
+		UPDATE community SET community_readcount=community_readcount+1 WHERE community_no = #{community_no}
+	</update> 
+	
+	<update id="communityUpdate" parameterType="board.CommunityVo">
+		UPDATE community SET 
+			community_title=#{community_title} 
+			, community_content=#{community_content}
+		WHERE community_no = #{community_no}
+	</update>
+	
+	<delete id="communityDelete">
+		DELETE FROM community WHERE community_no=#{community_no}
+	</delete> 
+	
+	<delete id="userCommunityDelete">
+		DELETE FROM community WHERE community_no=#{community_no}
+	</delete>
+	
+	<!-- ======================================= 커뮤니티 영역 끝 ======================================= -->
+	
+	
+	<!-- ======================================= FQA 영역 시작 ======================================= -->
+	<sql id="boardWhere5">
+	 	<where>
+			<if test="searchType == '' ">
+				(faq_title LIKE '%${searchWord}%' OR faq_content LIKE '%${searchWord}%')
+			</if>
+			<if test="searchType != null and searchType != '' ">
+				${searchType} LIKE '%${searchWord}%'
+			</if>	
+		</where>
+	 </sql>
+	 
+	 <!-- 페이징처리 -->
+	 <select id="faqCount" resultType="int" parameterType="board.FaqVo">
+	 	SELECT COUNT(*) FROM faq
+	 	<include refid="boardWhere5"></include>
+	 </select>
+
+	<select id="faqList" resultType="board.FaqVo" parameterType="board.FaqVo">
+		SELECT * FROM faq
+		<include refid="boardWhere5"></include>
+		ORDER BY faq_no DESC
+		LIMIT ${startIdx},10
+	</select>
+	
+	<insert id="faqInsert" parameterType="board.FaqVo">		
+		INSERT INTO faq (
+			faq_division, faq_title, faq_content, admin_no  
+			) VALUES (
+				#{faq_division}, #{faq_title}, #{faq_content}, #{admin_no}
+			) 
+	</insert>
+	
+	<select id="faqOne" parameterType="int" resultType="board.FaqVo">
+		SELECT *		
+		FROM faq WHERE faq_no = #{xxx}
+	</select>
+	
+	<update id="faqUpdate" parameterType="board.FaqVo">
+		UPDATE faq SET
+			faq_division=#{faq_division} 
+			, faq_title=#{faq_title} 
+			, faq_content=#{faq_content}
+		WHERE faq_no = #{faq_no}
+	</update>
+	
+	<delete id="faqDelete">
+		DELETE FROM faq WHERE faq_no=#{faq_no}
+	</delete>
+	
+	<!-- ======================================= FQA 영역 끝 ======================================= -->	 
+</mapper> 
